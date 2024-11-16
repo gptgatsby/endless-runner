@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Runner Game</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 0;
+            overflow: hidden;
+        }
+        #gameContainer {
+            position: relative;
+            width: 100vw;
+            height: 80vh;
+            background-color: #e0f7fa;
+            overflow: hidden;
+        }
+        .character {
+            position: absolute;
+            bottom: 20px;
+            left: 50px;
+            width: 60px;
+            height: 60px;
+            background-image: url('endless-runner-character.png'); /* Your custom character image */
+            background-size: cover;
+            background-position: center;
+            z-index: 2;
+        }
+        .obstacle {
+            position: absolute;
+            width: 100px; /* Increased width */
+            height: 155px; /* Increased height */
+            background-image: url('endless-runner-pipes.png'); /* Custom obstacle image */
+            background-size: cover;
+            background-position: center;
+            bottom: 20px;
+            left: 100vw;
+        }
+        .item {
+            position: absolute;
+            width: 80px; /* Increased width */
+            height: 80px; /* Increased height */
+            background-image: url('endless-runner-coins.png'); /* Custom coin image */
+            background-size: cover;
+            background-position: center;
+            bottom: 100px;
+            left: 100vw;
+        }
+        .score {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            font-size: 24px;
+            color: #333;
+            z-index: 3;
+        }
+    </style>
+</head>
+<body>
+    <h2>AI Runner Game</h2>
+    <p>Press spacebar to jump and avoid obstacles while collecting items!</p>
+    <div id="gameContainer">
+        <div class="character" id="character"></div>
+        <div class="score" id="score">Score: 0</div>
+    </div>
+
+    <script>
+        const gameContainer = document.getElementById('gameContainer');
+        const character = document.getElementById('character');
+        const scoreDisplay = document.getElementById('score');
+        let score = 0;
+        let jumping = false;
+        let characterY = character.offsetTop;
+
+        // Jump function with increased height
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space' && !jumping) {
+                jumping = true;
+                let jumpHeight = 0;
+                const jumpInterval = setInterval(() => {
+                    if (jumpHeight > 150) { // Increased jump height to 150px
+                        clearInterval(jumpInterval);
+                        const fallInterval = setInterval(() => {
+                            if (jumpHeight <= 0) { // Back on the ground
+                                clearInterval(fallInterval);
+                                jumping = false;
+                            }
+                            jumpHeight -= 3;
+                            character.style.bottom = `${20 + jumpHeight}px`;
+                        }, 10);
+                    }
+                    jumpHeight += 3;
+                    character.style.bottom = `${20 + jumpHeight}px`;
+                }, 10);
+            }
+        });
+
+        // Spawn obstacles and items
+        function spawnObstacle() {
+            const obstacle = document.createElement('div');
+            obstacle.classList.add('obstacle');
+            gameContainer.appendChild(obstacle);
+
+            const moveInterval = setInterval(() => {
+                const obstacleX = obstacle.offsetLeft;
+                if (obstacleX < -obstacle.offsetWidth) {
+                    obstacle.remove();
+                    clearInterval(moveInterval);
+                } else if (collision(character, obstacle)) {
+                    endGame();
+                    clearInterval(moveInterval);
+                } else {
+                    obstacle.style.left = `${obstacleX - 5}px`; // Move obstacle left
+                }
+            }, 20);
+
+            setTimeout(spawnObstacle, 2000 + Math.random() * 3000); // Spawn new obstacle randomly
+        }
+
+        function spawnItem() {
+            const item = document.createElement('div');
+            item.classList.add('item');
+            gameContainer.appendChild(item);
+
+            const moveInterval = setInterval(() => {
+                const itemX = item.offsetLeft;
+                if (itemX < -item.offsetWidth) {
+                    item.remove();
+                    clearInterval(moveInterval);
+                } else if (collision(character, item)) {
+                    score += 1;
+                    scoreDisplay.textContent = `Score: ${score}`;
+                    item.remove();
+                    clearInterval(moveInterval);
+                } else {
+                    item.style.left = `${itemX - 5}px`; // Move item left
+                }
+            }, 20);
+
+            setTimeout(spawnItem, 3000 + Math.random() * 3000); // Spawn new item randomly
+        }
+
+        // Collision detection
+        function collision(rect1, rect2) {
+            const r1 = rect1.getBoundingClientRect();
+            const r2 = rect2.getBoundingClientRect();
+            return !(
+                r1.top > r2.bottom ||
+                r1.bottom < r2.top ||
+                r1.left > r2.right ||
+                r1.right < r2.left
+            );
+        }
+
+        // End game
+        function endGame() {
+            alert(`Game Over! Final Score: ${score}`);
+            location.reload(); // Restart the game
+        }
+
+        // Start spawning obstacles and items
+        spawnObstacle();
+        spawnItem();
+    </script>
+</body>
+</html>
